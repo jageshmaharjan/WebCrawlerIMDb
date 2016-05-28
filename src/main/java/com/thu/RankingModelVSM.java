@@ -4,9 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by jagesh on 05/27/2016.
@@ -15,7 +13,7 @@ public class RankingModelVSM
 {
     public static void main(String[] args) //queryHandler()
     {
-        String user_query = "movies related to action";
+        String user_query = "sad";
 
         String output = Stopwords.removeStemmedStopWords(user_query.toLowerCase());
         String[] normalized = output.split(" |\\.|\\//|\\:|\\?|\\/|\\,|\\'|\\(|\\|\\!|\\)|\\&|\\;|\\@|\\[|\\{|\\}|\\''|\\]|\\-|\\*");
@@ -31,21 +29,76 @@ public class RankingModelVSM
             Class.forName(driver).newInstance();
             conn = DriverManager.getConnection(url + dbName, userName, password);
 
-            Set<String> alldocsId = new HashSet<>();
+            int N = 0;
+            Set<Integer> alldocsId = new HashSet<>();
             for (int i=0;i<normalized.length;i++)
             {
-                String sql = "SELECT * FROM postingtbl WHERE term=?";
+                String sql = "SELECT DISTINCT movieID FROM postingtbl WHERE term=?";
                 PreparedStatement prepstm = conn.prepareStatement(sql);
                 prepstm.setString(1,normalized[i]);
                 ResultSet rs = prepstm.executeQuery();
                 while (rs.next())
                 {
-                       alldocsId.add(rs.getString("MovieID"));
+                    alldocsId.add(rs.getInt("MovieID"));
+                }
+                prepstm.close();
+            }
+            N = alldocsId.size();
+            System.out.println(N);
+
+            //double[] doclen = new double[N];
+            List<Double> doclen = new ArrayList<>();
+            for (int i=0; i<normalized.length; i++)
+            {
+                String sql = "SELECT DISTINCT movieID, sum(frequency) as freq FROM postingtbl where term=? GROUP by movieID";
+                PreparedStatement prepstm = conn.prepareStatement(sql);
+                prepstm.setString(1,normalized[i]);
+                ResultSet rs = prepstm.executeQuery();
+                //int k =0;
+                while (rs.next())
+                {
+                    doclen.add(rs.getDouble("freq"));
+
+                }
+                prepstm.close();
+            }
+
+            int sum = 0;
+            float avdl = 0;
+            for (int k=0; k<doclen.size(); k++)
+            {
+                sum += doclen.get(k);
+            }
+            avdl = (float) sum/N;
+
+            int[][] termfreq = new int[normalized.length][N];
+            float df = 0;
+            for (int i=0; i<normalized.length; i++)
+            {
+                int m = 0;
+                String sql = "SELECT DISTINCT movieID, sum(frequency) as freq FROM postingtbl WHERE term=? GROUP BY movieID";
+                PreparedStatement prepstm = conn.prepareStatement(sql);
+                prepstm.setString(1,normalized[i]);
+                ResultSet rs = prepstm.executeQuery();
+                while (rs.next())
+                {
+                    if (rs.getInt("freq") != 0)
+                        df++;
+                    termfreq[i][m] = rs.getInt("freq");
+                    m++;
                 }
             }
 
-            System.out.println(alldocsId);
+            float IDF = (float) Math.log((N+1)/(df/normalized.length));
 
+            int[] tf = new int[N];
+            for (int i=0;i<termfreq[0].length;i++)
+            {
+                for (int j=0;j<termfreq.length; j++)
+                {
+                    tf[i] += termfreq[j][i];
+                }
+            }
 
         }
         catch (Exception e)
