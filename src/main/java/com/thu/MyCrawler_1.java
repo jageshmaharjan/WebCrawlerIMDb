@@ -95,7 +95,7 @@ public class MyCrawler_1
 
             try
             {
-                //IMDbDatabaseSchema.databaseConnection(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews);
+                IMDbDatabaseSchema.databaseConnection(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews);
                 IMDbPostintTbl.normalization(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews);
             }
             catch (Exception e)
