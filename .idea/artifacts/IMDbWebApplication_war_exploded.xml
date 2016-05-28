@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="IMDbWebApplication:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/IMDbWebApplication_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="IMDbWebApplication/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="IMDbWebApplication" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

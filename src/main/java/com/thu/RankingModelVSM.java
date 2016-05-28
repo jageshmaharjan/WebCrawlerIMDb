@@ -137,6 +137,9 @@ public class RankingModelVSM
             }
         }
 
-        System.out.println(docRank);
+        for (Map.Entry<Float,String> entry :docRank.entrySet())
+        {
+            System.out.println(entry.getValue() + " , " + entry.getKey());
+        }
     }
 }
