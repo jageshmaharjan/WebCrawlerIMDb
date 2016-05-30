@@ -43,6 +43,7 @@ public class MyCrawler_1
                     String storyline = rows.select("tr").get(i).getElementsByClass("outline").text();
 
                     String genre = rows.select("tr").get(i).getElementsByClass("genre").text();
+                    String imagelink = "http://www.imdb.com" + rows.select("tr").get(i).getElementsByClass("Image").select("a").attr("href");
                     String movielink = "http://www.imdb.com" + rows.select("tr").get(i).getElementsByClass("title").select("a").get(0).attr("href").toString();
 
                     movieByGenre(movielink, title, year, rating, storyline, genre);
