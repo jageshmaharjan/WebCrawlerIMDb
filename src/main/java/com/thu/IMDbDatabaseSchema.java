@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class IMDbDatabaseSchema
 {
-    public static void databaseConnection(String inLinks, String title, String year, String rating, String story, String[] gene, String[] director, String[] star, String[] lang, List<String> reviews) throws SQLException
+    public static void databaseConnection(String inLinks, String title, String year, String rating, String story, String[] gene, String[] director, String[] star, String[] lang, List<String> reviews,String imglink) throws SQLException
     {
         Connection conn;
 
@@ -22,7 +22,7 @@ public class IMDbDatabaseSchema
             Class.forName(driver).newInstance();
             conn = DriverManager.getConnection(url+dbName,userName,password);
 
-            String sql_movie = "INSERT INTO movie (MovieName,ReleaseDate,Rating,Storyline,url) VALUES (?,?,?,?,?)";
+            String sql_movie = "INSERT INTO movie (MovieName,ReleaseDate,Rating,Storyline,url,coverpicurl) VALUES (?,?,?,?,?,?)";
             PreparedStatement prepstm_movie = conn.prepareStatement(sql_movie);
 
             prepstm_movie.setString(1,title);
@@ -30,6 +30,7 @@ public class IMDbDatabaseSchema
             prepstm_movie.setString(3,rating);
             prepstm_movie.setString(4,story);
             prepstm_movie.setString(5,inLinks);
+            prepstm_movie.setString(6,imglink);
 
             prepstm_movie.execute();
             prepstm_movie.close();
