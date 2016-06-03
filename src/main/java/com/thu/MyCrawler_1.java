@@ -14,16 +14,15 @@ import java.util.List;
 /**
  * Created by jagesh on 05/24/2016.
  */
-public class MyCrawler_1
+public class MyCrawler_1 extends Thread
 {
     public static void main(String[] args) throws IOException
     {
         try
         {
+            int pageno = 15212; // (15211 == 10745)
 
-            int pageno = 1;
-
-            while (pageno < 2 )  //341228
+            while (pageno < 341228 )  //341228
             {
                 String mylink = "http://www.imdb.com/search/title?start="+pageno+"&title_type=feature";
                 //"http://www.imdb.com/search/title?genres=action&num_votes=25000,&pf_rd_i=top&pf_rd_m=A2FGELUUNOQJNL&pf_rd_p=2406822102&pf_rd_r=1B1TRCWF2WPB06FTXJ3H&pf_rd_s=right-6&pf_rd_t=15506&ref_=chttp_gnr_1&sort=user_rating,desc&start="+pageno +"&title_type=feature";
@@ -39,14 +38,26 @@ public class MyCrawler_1
                 {
                     String title = rows.select("tr").get(i).getElementsByClass("title").select("a").get(0).text();
                     String year = rows.select("tr").get(i).getElementsByClass("year_type").text();
+
                     String rating = rows.select("tr").get(i).getElementsByClass("rating-rating").text();
                     String storyline = rows.select("tr").get(i).getElementsByClass("outline").text();
 
                     String genre = rows.select("tr").get(i).getElementsByClass("genre").text();
-                    String imagelink = "http://www.imdb.com" + rows.select("tr").get(i).getElementsByClass("Image").select("a").attr("href");
+                    String imagelink = rows.select("tr").get(i).getElementsByClass("Image").select("img").attr("src");
                     String movielink = "http://www.imdb.com" + rows.select("tr").get(i).getElementsByClass("title").select("a").get(0).attr("href").toString();
 
-                    movieByGenre(movielink, title, year, rating, storyline, genre);
+                    try
+                    {
+                        Integer.parseInt(year.substring(1,5));
+                        if (Integer.parseInt(year.substring(1,5)) < 2016)
+                        {
+                            movieByGenre(movielink, title, year, rating, storyline, genre,imagelink);
+                        }
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        System.out.println(e);
+                    }
                 }
                 pageno += 50;
             }
@@ -57,7 +68,7 @@ public class MyCrawler_1
         }
     }
 
-    private static void movieByGenre(String inLinks, String title, String year, String rating, String story, String genre)
+    private static void movieByGenre(String inLinks, String title, String year, String rating, String story, String genre,String imagelink)
     {
         System.setProperty("https.proxyHost","127.0.0.1");
         System.setProperty("https.proxyPort","8200");
@@ -71,16 +82,50 @@ public class MyCrawler_1
 
             String[] gene = genre.split(" \\|");
 
+            //String dirUrl = docin1.getElementsByClass("credit_summary_item").get(0).select("a").attr("href");
             String[] directors = docin1.getElementsByClass("credit_summary_item").get(0).text().split(":");
             String[] director = directors[1].split(",");
 
-            String[] stars = docin1.getElementsByClass("credit_summary_item").get(2).text().split("Stars:|\\|");
-            String[] star = stars[1].split(",");
+            String[] stars = null;
+            String[] star = null;
+
+            if (((docin1.getElementsByClass("credit_summary_items")).size()) == 0 )
+            {
+                if (docin1.getElementsByClass("credit_summary_item").size() == 3)
+                {
+                    stars = docin1.getElementsByClass("credit_summary_item").get(2).text().split("Stars:|\\|");
+
+                    if (stars.length > 1)
+                    {
+                        star = stars[1].split(",");
+                    }
+                    else
+                    {
+                        star = stars[0].split(",");
+                    }
+
+                }
+                else if (docin1.getElementsByClass("credit_summary_item").size() == 2)
+                {
+                    stars = docin1.getElementsByClass("credit_summary_item").get(1).text().split("Stars:|\\|");
+
+                    if (stars.length > 1)
+                    {
+                        star = stars[1].split(",");
+                    }
+                    else
+                    {
+                        star = stars[0].split(",");
+                    }
+                }
+            }
 
             String[] languages = docin1.getElementsByClass("txt-block").get(5).text().split(":");
-            String[] lang = languages[1].split(" \\|");
-//            String[] language = lang[1].split(" \\|");
-//            String[] l = languages.split("Language:|\\|");
+            String[] lang = null;
+            if(languages.length > 1)
+            {
+                lang = languages[1].split(" \\|");
+            }
 
             String reviewLinks = inLinks + "reviews?ref_=tt_urv";
             Connection cons = Jsoup.connect(reviewLinks);
@@ -96,7 +141,7 @@ public class MyCrawler_1
 
             try
             {
-                IMDbDatabaseSchema.databaseConnection(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews);
+                IMDbDatabaseSchema.databaseConnection(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews,imagelink);
                 IMDbPostintTbl.normalization(inLinks,title,year.substring(1,5),rate[0],story,gene,director,star,lang,reviews);
             }
             catch (Exception e)

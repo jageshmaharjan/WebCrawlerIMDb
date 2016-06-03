@@ -13,22 +13,23 @@ public class RankingModelVSM
 {
     public static void main(String[] args) //queryHandler()
     {
-        String user_query = "comedy";
+        String user_query = "tom cruise";
 
         String output = Stopwords.removeStemmedStopWords(user_query.toLowerCase());
         String[] normalized = output.split(" |\\.|\\//|\\:|\\?|\\/|\\,|\\'|\\(|\\|\\!|\\)|\\&|\\;|\\@|\\[|\\{|\\}|\\''|\\]|\\-|\\*");
 
-        Connection conn;
+//        Connection conn;
         String  url = "jdbc:mysql://localhost:3306/";
         String dbName = "movieanalysis";
         String driver = "com.mysql.jdbc.Driver";
         String userName = "jagesh";
         String password = "jagesh007";
-        try
+        try( Connection conn = DriverManager.getConnection(url+dbName, userName,password))
         {
             Class.forName(driver).newInstance();
-            conn = DriverManager.getConnection(url + dbName, userName, password);
+//            conn = DriverManager.getConnection(url + dbName, userName, password);
 
+            conn.setAutoCommit(false);
             int N = 0;
             Set<Integer> alldocsId = new HashSet<>();
             for (int i=0;i<normalized.length;i++)
@@ -36,12 +37,14 @@ public class RankingModelVSM
                 String sql = "SELECT DISTINCT movieID FROM postingtbl WHERE term=?";
                 PreparedStatement prepstm = conn.prepareStatement(sql);
                 prepstm.setString(1,normalized[i]);
+                prepstm.setFetchSize(200);
                 ResultSet rs = prepstm.executeQuery();
                 while (rs.next())
                 {
                     alldocsId.add(rs.getInt("MovieID"));
                 }
                 prepstm.close();
+                rs.close();
             }
             N = alldocsId.size();
             System.out.println(N);
@@ -53,6 +56,7 @@ public class RankingModelVSM
                 String sql = "SELECT DISTINCT movieID, sum(frequency) as freq FROM postingtbl where term=? GROUP by movieID";
                 PreparedStatement prepstm = conn.prepareStatement(sql);
                 prepstm.setString(1,normalized[i]);
+                prepstm.setFetchSize(200);
                 ResultSet rs = prepstm.executeQuery();
                 int k =0;
                 while (rs.next())
@@ -61,6 +65,7 @@ public class RankingModelVSM
                     k++;
                 }
                 prepstm.close();
+                rs.close();
             }
 
             int sum = 0;
@@ -79,6 +84,7 @@ public class RankingModelVSM
                 String sql = "SELECT DISTINCT movieID, sum(frequency) as freq FROM postingtbl WHERE term=? GROUP BY movieID";
                 PreparedStatement prepstm = conn.prepareStatement(sql);
                 prepstm.setString(1,normalized[i]);
+                prepstm.setFetchSize(150);
                 ResultSet rs = prepstm.executeQuery();
                 while (rs.next())
                 {
@@ -87,6 +93,8 @@ public class RankingModelVSM
                     termfreq[i][m] = rs.getInt("freq");
                     m++;
                 }
+                prepstm.close();
+                rs.close();
             }
 
             float IDF = (float) Math.log((N+1)/(df/normalized.length));
