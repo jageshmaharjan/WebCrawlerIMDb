@@ -5,23 +5,30 @@ import io.indico.api.results.IndicoResult;
 import io.indico.api.utils.IndicoException;
 
 import java.io.IOException;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 /**
  * Created by jagesh on 06/03/2016.
+ * Finding positiveness or negativeness -> Currently not in use, using different module
  */
 public class SentimentScoring implements MyConstants
 {
     public static void main(String[] args) throws Exception
     {
         SentimentScoring ss = new SentimentScoring();
+
         Map<Integer,Double> movie_sentimentscore = new HashMap<>();
 
         Map<Integer, List<String>> output = ss.getReviews();
-        Iterator it = output.entrySet().iterator();
-        while (it.hasNext())
+        for (Map.Entry<Integer, List<String>> entry : output.entrySet() )
         {
-            Map.Entry entry = (Map.Entry) it.next();
+            System.out.println(entry.getValue());
             double sentimentScore = ss.getSentimentScore(entry.getValue().toString());
             System.out.println(sentimentScore);
             movie_sentimentscore.put((Integer) entry.getKey(),sentimentScore);
@@ -37,7 +44,7 @@ public class SentimentScoring implements MyConstants
         try(Connection conn = DBConnection.getConnection();
             PreparedStatement ps = conn.prepareStatement(sql);)
         {
-            for (int i=401;i<= 500;i++)
+            for (int i=1;i<= 5;i++)
             {
                 List<String> reviews = new ArrayList<>();
                 ps.setInt(1,i);
@@ -55,6 +62,9 @@ public class SentimentScoring implements MyConstants
     public double getSentimentScore(String stringFullAll) throws IOException, IndicoException
     {
         Indico indico = new Indico(MY_API_KEY);
+        Map params = new HashMap();
+        params.put("threshold",0.25);
+
         String stringFull = stringFullAll.replaceAll("[^a-zA-Z0-9]"," ");
 
         double sentimentScore=0;
@@ -67,6 +77,7 @@ public class SentimentScoring implements MyConstants
                 strShort = (stringFull.substring(0,STRING_LEN));
                 IndicoResult res = indico.sentimentHQ.predict(strShort.replaceAll("[^a-zA-Z0-9]"," "));
                 Double val = res.getSentimentHQ();
+//                Map<Emotion, Double> results = indico.emotion.predict(strShort,params).getEmotion();
                 sentimentScore += val;
                 lines++;
                 stringFull =  stringFull.substring(STRING_LEN,stringFull.length());
@@ -92,14 +103,12 @@ public class SentimentScoring implements MyConstants
             PreparedStatement ps = conn.prepareStatement(query);)
         {
             conn.setAutoCommit(false);
-
             for (Map.Entry<Integer, Double> entry : movie_sentimentscore.entrySet())
             {
                 ps.setInt(1, entry.getKey());
                 ps.setDouble(2, entry.getValue());
                 ps.addBatch();
             }
-
             ps.executeBatch();
             conn.commit();
         }

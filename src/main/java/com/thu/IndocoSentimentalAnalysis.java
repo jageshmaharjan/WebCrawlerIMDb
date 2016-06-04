@@ -112,4 +112,14 @@ public class IndocoSentimentalAnalysis implements MyConstants
         System.out.println(results);
 
     }
+
+    public void emotionAnalysis()
+    {
+        Map params = new HashMap();
+        params.put("threshold", 0.25);
+
+//        Indico indico =new Indico(MY_API_KEY);
+//        Map<Emotion, Double> results = indico.emotion.predict("I did it. Igot it");
+//        System.out.println(results);
+    }
 }
